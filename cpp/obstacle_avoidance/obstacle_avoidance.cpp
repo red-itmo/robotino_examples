@@ -4,48 +4,11 @@
 #include <Com.h>
 #include <Bumper.h>
 #include <OmniDrive.h>
-#include <RobotinoException.h>
 #include <DistanceSensorArray.h>
 
 #define SOME_TIME 0.05
 
 using namespace rec::robotino::api2;
-
-
-class MyCom : public Com{
-public:
-    MyCom(const char *name) : Com(name){ }
-    bool connectTo(const char *ip);
-};
-
-
-bool MyCom::connectTo(const char *ip){
-
-    setAddress(ip);
-    std::cout << "Trying to connect with " << ip << "..." <<std::endl;
-
-    //try connect to Robotino with IP=ip
-    try{
-        connectToServer(true);
-        std::cout << "Successfully connected!" << std::endl;
-    }
-    catch(...){
-        std::cout << "Unable to connect! Program stopped." << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-
-
-class MyBumper: public Bumper{
-public:
-    bool touched;
-    MyBumper(){ touched = false; }
-    void bumperEvent( bool has_contact ) { touched = has_contact;}
-};
-
 
 
 class MyDistanceSensorArray : public DistanceSensorArray {
@@ -78,20 +41,30 @@ void sleep(double secs){
 
 int main(int argc, char **argv){
 
-    MyCom com("first_client");
+    Com com;
     MyDistanceSensorArray dist_sens;
-    MyBumper bumper;
+    Bumper bumper;
     OmniDrive omni;
 
     /*connect to robot with IP which was specified as program's command line
     argument or to 192.168.0.100 if no argument was provided*/
+    //setting IP
     if(argc > 1){
-         if( !com.connectTo(argv[1]) )
-            return 0;
+         com.setAddress(argv[1]);
+         std::cout << "Trying to connect to " << argv[1] << "..." << std::endl;
     }
     else{
-        if( !com.connectTo("192.168.1.100") )
-            return 0;
+        com.setAddress("192.168.0.100");
+        std::cout << "Trying to connect to 192.168.0.100..." << std::endl;
+    }
+    //try to connect
+    try{
+        com.connectToServer(true);
+        std::cout << "Successfully connected!" << std::endl;
+    }
+    catch(...){
+        std::cout << "Unable to connect! Program stopped." << std::endl;
+        return 0;
     }
 
     //connect devices with their handles
@@ -100,7 +73,8 @@ int main(int argc, char **argv){
     omni.setComId(com.id());
     dist_sens.setComId(com.id());
 
-    while(!bumper.touched){
+    //loop until bumper be pressed
+    while(!bumper.value()){
         com.processEvents();
         if(dist_sens.detect_danger){
             omni.setVelocity(0, 0, 0.5);
@@ -112,8 +86,6 @@ int main(int argc, char **argv){
     }
 
     std::cout << "Bumper was pressed! Program stopped." << std::endl;
-
     com.disconnectFromServer();
-
     return 0;
 }
