@@ -8,7 +8,7 @@
 void sleep(double secs);
 
 
-Robot::Robot(Com com){
+Robot::Robot(Com &com){
     //connect devices with their handles
     omni.setComId(com.id());
     odom.setComId(com.id());
@@ -27,7 +27,7 @@ void Robot::moveTo(float x, float y){
     while( pow(x - cur_x, 2) + pow(y - cur_y, 2) > pow(LIMIT,2) ){
         //check bumper's state
         if(bumper.value())
-            throw "Bumper was pressed!";
+            throw std::string("Bumper was pressed!");
         //motion control
         vel_x = K * (x - cur_x);
         vel_y = K * (y - cur_y);

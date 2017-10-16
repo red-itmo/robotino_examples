@@ -10,6 +10,6 @@ class Robot{
     Odometry odom;
     OmniDrive omni;
 public:
-    Robot(Com com);
+    Robot(Com &com);
     void moveTo(float x, float y);
 };
